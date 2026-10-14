@@ -10,6 +10,16 @@
     "IsCancelled": false
   },
   {
+    "Id": 1045,
+    "CustomerName": "Nackademin AB",
+    "RoomName": "Birken",
+    "Date": "2026-10-16",
+    "StartTime": "09:00:00",
+    "EndTime": "11:00:00",
+    "Participants": 6,
+    "IsCancelled": false
+  },
+  {
     "Id": 1043,
     "CustomerName": "Nackademin AB",
     "RoomName": "Birken",
