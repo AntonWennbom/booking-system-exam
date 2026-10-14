@@ -7,6 +7,10 @@ application targets .NET 10 and contains a console application and xUnit tests.
 
 - .NET 10 SDK
 
+## Debugging file
+
+Look at the DEBUGGING.md located in ```src/Docs/DEBUGGING.md```
+
 ## Run the application
 
 ```bash
