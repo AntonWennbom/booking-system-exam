@@ -60,16 +60,16 @@ public class BookingConsole(BookingService service)
 
     private void CreateBooking()
     {
-        Console.Write("Customer name: ");
-        var customerName = Console.ReadLine() ?? string.Empty;
-        Console.Write("Room (Aspen, Birken or Eken): ");
-        var roomName = Console.ReadLine() ?? string.Empty;
+        var customerName = InputCustomerName();
+
+        var roomName = InputRoomName();
+        Console.WriteLine($"Du valde {roomName}");
+
         var date = ReadDate("Date (yyyy-MM-dd): ");
         var startTime = ReadTime("Start time (HH:mm): ");
         var endTime = ReadTime("End time (HH:mm): ");
 
-        Console.Write("Participants: ");
-        var participants = int.Parse(Console.ReadLine() ?? string.Empty);
+        var participants = InputParticipants(roomName);
 
         var booking = new Booking
         {
@@ -84,6 +84,8 @@ public class BookingConsole(BookingService service)
         var result = service.Create(booking);
         Console.WriteLine(result.Message);
     }
+
+    
 
     private void CancelBooking()
     {
@@ -156,5 +158,76 @@ public class BookingConsole(BookingService service)
 
             Console.WriteLine("Enter the time using HH:mm.");
         }
+    }
+
+    private int InputParticipants(string roomName)
+    {
+        int participants;
+        var maxNumberInRoom = service.MaxParticipantsInRoom(roomName);
+
+        while (true)
+        {
+            Console.WriteLine($"(For {roomName} enter a number between 1 and {maxNumberInRoom})");
+            Console.WriteLine("Enter number of participants: ");
+            var input = Console.ReadLine();
+
+            if (int.TryParse(input, out participants) && participants > 0 && participants <= maxNumberInRoom)
+                break;
+
+            Console.WriteLine($"Participants must be a number greater than 0 and maximum {maxNumberInRoom}.");
+        }
+
+        return participants;
+    }
+
+    private static string InputCustomerName()
+    {
+        string customerName = string.Empty;
+
+        while (string.IsNullOrWhiteSpace(customerName))
+        {
+            Console.Write("Customer name: ");
+            customerName = Console.ReadLine() ?? string.Empty;
+
+            if (string.IsNullOrWhiteSpace(customerName))
+            {
+                Console.WriteLine("Customer name cannot be empty.");
+                continue;
+            }
+
+            if (customerName.Length < 2 || customerName.Length > 30)
+            {
+                Console.WriteLine("Customer name must be between 2 and 30 characters");
+                customerName = string.Empty;
+            }
+        }
+
+        return customerName;
+    }
+
+    private static string InputRoomName()
+    {
+        Console.WriteLine("Select booking Room (Aspen, Birken or Eken): ");
+        Console.WriteLine("1. Aspen ");
+        Console.WriteLine("2. Birken ");
+        Console.WriteLine("3. Eken ");
+
+        ConsoleKey option;
+
+        do
+        {
+            option = Console.ReadKey(true).Key;
+        }
+        while (option != ConsoleKey.D1 &&
+        option != ConsoleKey.D2 &&
+        option != ConsoleKey.D3);
+
+        return option switch
+        {
+            ConsoleKey.D1 => "Aspen",
+            ConsoleKey.D2 => "Birken",
+            ConsoleKey.D3 => "Eken",
+            _ => "Ogiltigt val"
+        };
     }
 }

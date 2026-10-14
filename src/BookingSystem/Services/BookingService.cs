@@ -5,6 +5,14 @@ namespace BookingSystem.Services;
 
 public class BookingService(IBookingRepository repository)
 {
+    public int MaxParticipantsInRoom(string roomName)
+    {
+        if (Rooms.TryGetValue(roomName, out var room))
+            return room.Capacity;
+
+        throw new ArgumentException($"Room '{roomName}' does not exist.");
+    }
+
     private static readonly IReadOnlyDictionary<string, Room> Rooms =
         new Dictionary<string, Room>(StringComparer.OrdinalIgnoreCase)
         {
