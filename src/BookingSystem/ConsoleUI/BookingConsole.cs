@@ -85,8 +85,6 @@ public class BookingConsole(BookingService service)
         Console.WriteLine(result.Message);
     }
 
-
-
     private void CancelBooking()
     {
         Console.Write("Booking number: ");

@@ -1,72 +1,68 @@
-## Buggar
-
 # Debuggfall – Buggrapport
-
-Nedan följer dokumentation av ett specifikt debuggarbete.  
-Strukturen är avsedd att vara enkel, konsekvent och lätt att följa.
-
 ---
 
 ## 🐞 Vilket fel undersökte du?
-001 - Visa alla aktiva bokningar.  
+004 - Programmet kraschar vid felaktigt deltagarantal 
 
 ---
 
 ## 🔁 Hur återskapade du felet?
 1. Starta applikationen.
-2. Välj alternativ 1 i menyn [Show active bookings]
-3. Bokningarna visas
-
+2. Välj alternativ 3 i menyn [Create booking]
+3. Mata in efterfrågad information fram till participant
+4. Skriv in "five"
 ---
 
 ## Screenshot - Före
-Här visas inaktiva bokningar och fel sortering.  
-![Bokningarna visas inte korrekt](./Images/bug-001-before.png)  
+Här kastas exceptiono och applikationen kraschar. 
+![Bokningarna visas inte korrekt](./Images/bug-004-before.png)  
 
-## 📌 Vilket resultat fick du?
-Jag fick en lista på alla boknginarna som finns i systemet, den visade även bokningar som är ```IsCancelled == true```, samt att den inte listade boknignana i rätt följd.
+## 📌 Vilket resultat fick du?  
+Applikationen kastar ett ``` FormatException ``` och stänger ner.
 
 ---
 
 ## 🎯 Vilket resultat skulle du ha fått?
-Jag skulle ha fått en lista på de bokningarna som är aktiva i systemet, dvs inte avbokade möten. De skulle även listas efter datum ordning 
-och vid flera bokningar samma dag ska de boknigarna listas efter starttid.
+Användaren skulle ha fått information om vad som gick fel och fick försöka igen och skriva in en siffra nästa försök.
 
 ---
 
 ## 🧩 Vilken del av koden orsakade felet?
-- Här kan vi se att metoden GetActiveBookings inte är färdig, den ger tillbaka alla bokningar rakt av, ingen filtrering eller sortering av bokningarna görs.  
+- I filen ```BookingConsole.cs``` kan vi se att värdet vi skriver in i konsolen för participants parsas direkt utan att kolla om en parse är möjlig. ```int.Parse()``` 
+behöver en sträng i format av ett heltal för att fungera t.ex. ```"5"``` därför krashar det eftersom att vi skickar in ```"five"```.  
 ```csharp
-   public IReadOnlyList<Booking> GetActiveBookings()
-    {
-        // This method has not been completed.
-        return repository.GetAll();
-    }
+        Console.Write("Participants: ");
+        var participants = int.Parse(Console.ReadLine() ?? string.Empty);
 ```
 
 ---
 
 ## 🧩 Hur fixades buggen?
-- Första prblemet med att alla bokningar visades kan lösas med att endast plocka ut de aktiva bokningarna, därefter la jag till en metod som sorterar bookningarna efter
-datum och därefter starttid. Jag lade till en till bokning 1045 i *bookings.json* med samma startdatum men en tidigare tid än 1043 för att se att filtreringen fungerade som den ska.
-Den cancelerade bokningen 1044 ligger kvar i *bookings.json* men visas inte.
+- Genom att skapa en metod för att validera och hantera Participant inputen och i den lägga ```int.TryParse(input, out participants)```
+istället för att köra ```int.Parse()``` så kan vi också skriva ut ett meddelande till användaren att det måste vara ett nummer.
+För att underlätta lade jag också till så att vi visar och kollar att värdet är gilltigt för det valda rummet redan här. 
+Så att vi får snabb feedback på om det är ett giltigt nummer.
 ```csharp
-  public IReadOnlyList<Booking> GetActiveBookings()
+      private int InputParticipants(string roomName)
     {
-        var activeBookings = repository.GetAll().Where(booking => booking.IsCancelled == false);
-        return SortBookingsByDateAndStartTime(activeBookings);
-    }
+        int participants;
+        var maxNumberInRoom = service.MaxParticipantsInRoom(roomName);
 
-    private static List<Booking> SortBookingsByDateAndStartTime(IEnumerable<Booking> activeBookings)
-    {
-        return activeBookings.OrderBy(booking => booking.Date).ThenBy(booking => booking.StartTime).ToList();
+        while (true)
+        {
+            Console.WriteLine($"(For {roomName} enter a number between 1 and {maxNumberInRoom})");
+            Console.WriteLine("Enter number of participants: ");
+            var input = Console.ReadLine();
+
+            if (int.TryParse(input, out participants) && participants > 0 && participants <= maxNumberInRoom)
+                break;
+
+            Console.WriteLine($"Participants must be a number greater than 0 and maximum {maxNumberInRoom}.");
+        }
+
+        return participants;
     }
 ```   
--  Jag kan även se att testet ```GetActiveBookings_ReturnsOnlyActiveBookingsSortedByDateAndStartTime()``` efter ändringarna går igenom. Testet skapar ett antal boknignar och kollar att
-```GetActiveBookings()``` retunerar en lista på endast aktiva möten samt i rätt sortering, listan skapas inte heller med möten i rätt ordning så det krävs sorteringen för att testet ska gå igenom.
-
----
-
-## Screenshot - Efter
-Här visas aktiva bokningar i rätt ordning.  
-![Här listas bokningar korrekt](./Images/bug-001-after.png) 
+-  Jag kan inte se att något av testen hittade den här buggen då testet för participants ```Create_WhenParticipantCountExceedsCapacity_ReturnsFailure()```
+tar en int när den skapar testbokningen och kollar så att man inte kan ha för många deltagare för det valda mötesrummet. 
+Och alla metoder i ```BookingConsole.cs``` är privata och har inga tester. 
