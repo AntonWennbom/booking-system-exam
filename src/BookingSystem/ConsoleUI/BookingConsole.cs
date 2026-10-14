@@ -67,7 +67,7 @@ public class BookingConsole(BookingService service)
 
         var date = ReadDate("Date (yyyy-MM-dd): ");
         var startTime = ReadTime("Start time (HH:mm): ");
-        var endTime = ReadTime("End time (HH:mm): ");
+        var endTime = ReadTime("End time (HH:mm): ", startTime);
 
         var participants = InputParticipants(roomName);
 
@@ -85,7 +85,7 @@ public class BookingConsole(BookingService service)
         Console.WriteLine(result.Message);
     }
 
-    
+
 
     private void CancelBooking()
     {
@@ -140,7 +140,7 @@ public class BookingConsole(BookingService service)
         }
     }
 
-    private static TimeOnly ReadTime(string prompt)
+    private static TimeOnly ReadTime(string prompt, TimeOnly? meetingStartTime = null)
     {
         while (true)
         {
@@ -153,6 +153,12 @@ public class BookingConsole(BookingService service)
                     DateTimeStyles.None,
                     out var time))
             {
+
+                if (meetingStartTime.HasValue && time <= meetingStartTime)
+                {
+                    Console.WriteLine($"End time must be set after start time ({meetingStartTime}) ");
+                    continue;
+                }
                 return time;
             }
 
@@ -208,9 +214,9 @@ public class BookingConsole(BookingService service)
     private static string InputRoomName()
     {
         Console.WriteLine("Select booking Room (Aspen, Birken or Eken): ");
-        Console.WriteLine("1. Aspen ");
-        Console.WriteLine("2. Birken ");
-        Console.WriteLine("3. Eken ");
+        Console.WriteLine("1. Aspen (1-4)");
+        Console.WriteLine("2. Birken (1-8)");
+        Console.WriteLine("3. Eken (1-12)");
 
         ConsoleKey option;
 
