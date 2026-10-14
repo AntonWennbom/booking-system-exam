@@ -53,13 +53,17 @@ public class BookingConsole(BookingService service)
 
     private void SearchBookings()
     {
-        Console.Write("Customer name: ");
+        Console.Clear();
+        Console.WriteLine("Search for active bookings");
+        Console.Write("Enter Customer name: ");
         var searchTerm = Console.ReadLine() ?? string.Empty;
         ShowBookings(service.Search(searchTerm));
     }
 
     private void CreateBooking()
     {
+        Console.Clear();
+        Console.WriteLine("Create a new booking");
         var customerName = InputCustomerName();
 
         var roomName = InputRoomName();
@@ -87,6 +91,8 @@ public class BookingConsole(BookingService service)
 
     private void CancelBooking()
     {
+        Console.Clear();
+        Console.WriteLine("Enter booking Id for the booking you wish to cancel");
         Console.Write("Booking number: ");
 
         if (!int.TryParse(Console.ReadLine(), out var bookingId))
@@ -100,6 +106,7 @@ public class BookingConsole(BookingService service)
 
     private static void ShowBookings(IReadOnlyList<Booking> bookings)
     {
+        Console.Clear();
         if (bookings.Count == 0)
         {
             Console.WriteLine("No bookings were found.");

@@ -34,11 +34,12 @@ public class BookingService(IBookingRepository repository)
 
     public IReadOnlyList<Booking> Search(string searchTerm)
     {
-        return repository.GetAll()
+        var filteredBookings = repository.GetAll()
             .Where(booking =>
                 !booking.IsCancelled &&
                 booking.CustomerName.Contains(searchTerm, StringComparison.OrdinalIgnoreCase))
             .ToList();
+        return SortBookingsByDateAndStartTime(filteredBookings);
     }
 
     public BookingResult Create(Booking booking)
