@@ -14,4 +14,9 @@ public class InMemoryBookingRepository(params Booking[] bookings) : IBookingRepo
     public void Add(Booking booking) => _bookings.Add(booking);
 
     public void Save() => SaveCount++;
+
+    public void Update(Booking booking)
+    {
+    }
+
 }

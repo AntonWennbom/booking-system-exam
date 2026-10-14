@@ -7,4 +7,5 @@ public interface IBookingRepository
     IReadOnlyList<Booking> GetAll();
     void Add(Booking booking);
     void Save();
+    void Update(Booking booking);
 }
