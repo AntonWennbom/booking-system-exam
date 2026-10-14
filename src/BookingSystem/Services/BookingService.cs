@@ -5,6 +5,14 @@ namespace BookingSystem.Services;
 
 public class BookingService(IBookingRepository repository)
 {
+    public int MaxParticipantsInRoom(string roomName)
+    {
+        if (Rooms.TryGetValue(roomName, out var room))
+            return room.Capacity;
+
+        throw new ArgumentException($"Room '{roomName}' does not exist.");
+    }
+
     private static readonly IReadOnlyDictionary<string, Room> Rooms =
         new Dictionary<string, Room>(StringComparer.OrdinalIgnoreCase)
         {
@@ -15,17 +23,23 @@ public class BookingService(IBookingRepository repository)
 
     public IReadOnlyList<Booking> GetActiveBookings()
     {
-        // This method has not been completed.
-        return repository.GetAll();
+        var activeBookings = repository.GetAll().Where(booking => booking.IsCancelled == false);
+        return SortBookingsByDateAndStartTime(activeBookings);
+    }
+
+    private static List<Booking> SortBookingsByDateAndStartTime(IEnumerable<Booking> activeBookings)
+    {
+        return activeBookings.OrderBy(booking => booking.Date).ThenBy(booking => booking.StartTime).ToList();
     }
 
     public IReadOnlyList<Booking> Search(string searchTerm)
     {
-        return repository.GetAll()
+        var filteredBookings = repository.GetAll()
             .Where(booking =>
                 !booking.IsCancelled &&
-                booking.CustomerName.Contains(searchTerm))
+                booking.CustomerName.Contains(searchTerm, StringComparison.OrdinalIgnoreCase))
             .ToList();
+        return SortBookingsByDateAndStartTime(filteredBookings);
     }
 
     public BookingResult Create(Booking booking)
@@ -46,7 +60,19 @@ public class BookingService(IBookingRepository repository)
 
     public BookingResult Cancel(int bookingId)
     {
-        throw new NotImplementedException();
+        var bookingToCancel = GetActiveBookings().FirstOrDefault(booking => booking.Id == bookingId);
+
+        if (bookingToCancel is null)
+        {
+            return BookingResult.Failure($"Could not find booking with id: {bookingId}");
+        }
+
+        bookingToCancel.IsCancelled = true;
+
+        repository.Update(bookingToCancel);
+        repository.Save();
+
+        return BookingResult.Success($"Booking {bookingId} is now canceld");
     }
 
     private BookingResult Validate(Booking booking)
@@ -61,7 +87,7 @@ public class BookingService(IBookingRepository repository)
             return BookingResult.Failure("The selected room does not exist.");
         }
 
-        if (booking.StartTime == booking.EndTime)
+        if (booking.StartTime >= booking.EndTime)
         {
             return BookingResult.Failure("The start time must be earlier than the end time.");
         }
@@ -80,8 +106,8 @@ public class BookingService(IBookingRepository repository)
             !existing.IsCancelled &&
             existing.Date == booking.Date &&
             existing.RoomName.Equals(booking.RoomName, StringComparison.OrdinalIgnoreCase) &&
-            booking.StartTime >= existing.StartTime &&
-            booking.StartTime < existing.EndTime);
+            booking.StartTime < existing.EndTime &&
+            booking.EndTime > existing.StartTime);
 
         if (hasOverlap)
         {

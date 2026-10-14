@@ -53,23 +53,27 @@ public class BookingConsole(BookingService service)
 
     private void SearchBookings()
     {
-        Console.Write("Customer name: ");
+        Console.Clear();
+        Console.WriteLine("Search for active bookings");
+        Console.Write("Enter Customer name: ");
         var searchTerm = Console.ReadLine() ?? string.Empty;
         ShowBookings(service.Search(searchTerm));
     }
 
     private void CreateBooking()
     {
-        Console.Write("Customer name: ");
-        var customerName = Console.ReadLine() ?? string.Empty;
-        Console.Write("Room (Aspen, Birken or Eken): ");
-        var roomName = Console.ReadLine() ?? string.Empty;
+        Console.Clear();
+        Console.WriteLine("Create a new booking");
+        var customerName = InputCustomerName();
+
+        var roomName = InputRoomName();
+        Console.WriteLine($"Du valde {roomName}");
+
         var date = ReadDate("Date (yyyy-MM-dd): ");
         var startTime = ReadTime("Start time (HH:mm): ");
-        var endTime = ReadTime("End time (HH:mm): ");
+        var endTime = ReadTime("End time (HH:mm): ", startTime);
 
-        Console.Write("Participants: ");
-        var participants = int.Parse(Console.ReadLine() ?? string.Empty);
+        var participants = InputParticipants(roomName);
 
         var booking = new Booking
         {
@@ -87,6 +91,8 @@ public class BookingConsole(BookingService service)
 
     private void CancelBooking()
     {
+        Console.Clear();
+        Console.WriteLine("Enter booking Id for the booking you wish to cancel");
         Console.Write("Booking number: ");
 
         if (!int.TryParse(Console.ReadLine(), out var bookingId))
@@ -100,6 +106,7 @@ public class BookingConsole(BookingService service)
 
     private static void ShowBookings(IReadOnlyList<Booking> bookings)
     {
+        Console.Clear();
         if (bookings.Count == 0)
         {
             Console.WriteLine("No bookings were found.");
@@ -138,7 +145,7 @@ public class BookingConsole(BookingService service)
         }
     }
 
-    private static TimeOnly ReadTime(string prompt)
+    private static TimeOnly ReadTime(string prompt, TimeOnly? meetingStartTime = null)
     {
         while (true)
         {
@@ -151,10 +158,87 @@ public class BookingConsole(BookingService service)
                     DateTimeStyles.None,
                     out var time))
             {
+
+                if (meetingStartTime.HasValue && time <= meetingStartTime)
+                {
+                    Console.WriteLine($"End time must be set after start time ({meetingStartTime}) ");
+                    continue;
+                }
                 return time;
             }
 
             Console.WriteLine("Enter the time using HH:mm.");
         }
+    }
+
+    private int InputParticipants(string roomName)
+    {
+        int participants;
+        var maxNumberInRoom = service.MaxParticipantsInRoom(roomName);
+
+        while (true)
+        {
+            Console.WriteLine($"(For {roomName} enter a number between 1 and {maxNumberInRoom})");
+            Console.WriteLine("Enter number of participants: ");
+            var input = Console.ReadLine();
+
+            if (int.TryParse(input, out participants) && participants > 0 && participants <= maxNumberInRoom)
+                break;
+
+            Console.WriteLine($"Participants must be a number greater than 0 and maximum {maxNumberInRoom}.");
+        }
+
+        return participants;
+    }
+
+    private static string InputCustomerName()
+    {
+        string customerName = string.Empty;
+
+        while (string.IsNullOrWhiteSpace(customerName))
+        {
+            Console.Write("Customer name: ");
+            customerName = Console.ReadLine() ?? string.Empty;
+
+            if (string.IsNullOrWhiteSpace(customerName))
+            {
+                Console.WriteLine("Customer name cannot be empty.");
+                continue;
+            }
+
+            if (customerName.Length < 2 || customerName.Length > 30)
+            {
+                Console.WriteLine("Customer name must be between 2 and 30 characters");
+                customerName = string.Empty;
+            }
+        }
+
+        return customerName;
+    }
+
+    private static string InputRoomName()
+    {
+        Console.WriteLine("Select booking Room (Aspen, Birken or Eken): ");
+        Console.WriteLine("1. Aspen (1-4)");
+        Console.WriteLine("2. Birken (1-8)");
+        Console.WriteLine("3. Eken (1-12)");
+
+        ConsoleKey option;
+
+        do
+        {
+            option = Console.ReadKey(true).Key;
+        }
+        while (option != ConsoleKey.D1 &&
+        option != ConsoleKey.D2 &&
+        option != ConsoleKey.D3);
+
+        return option switch
+        {
+            ConsoleKey.D1 => "Aspen",
+            ConsoleKey.D2 => "Birken",
+            ConsoleKey.D3 => "Eken",
+            _ => "Ogiltigt val"
+        };
     }
 }

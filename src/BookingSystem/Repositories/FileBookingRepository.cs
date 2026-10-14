@@ -46,4 +46,14 @@ public class FileBookingRepository(string filePath) : IBookingRepository
             return [];
         }
     }
+
+    public void Update(Booking booking)
+    {
+        var bookingToUpdate = _bookings.FirstOrDefault(booking => booking.Id == booking.Id);
+
+        if (bookingToUpdate is null)
+            throw new InvalidOperationException("Booking not found.");
+
+        bookingToUpdate.IsCancelled = booking.IsCancelled;
+    }
 }
