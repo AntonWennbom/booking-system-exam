@@ -49,7 +49,7 @@ public class FileBookingRepository(string filePath) : IBookingRepository
 
     public void Update(Booking booking)
     {
-        var bookingToUpdate = _bookings.FirstOrDefault(b => b.Id == booking.Id);
+        var bookingToUpdate = _bookings.FirstOrDefault(booking => booking.Id == booking.Id);
 
         if (bookingToUpdate is null)
             throw new InvalidOperationException("Booking not found.");
